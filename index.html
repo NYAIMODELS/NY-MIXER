@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NY AIMIXER — Unified AI Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #080b0f;
+    --bg2: #0e1318;
+    --bg3: #141a22;
+    --border: #1e2a38;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #39ff14;
+    --text: #e8f0f8;
+    --muted: #4a6070;
+    --card: #0f1922;
+    --font-mono: 'Space Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.12;
+  }
+  .orb1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -200px; }
+  .orb2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; right: -100px; }
+
+  .app-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+  .logo-sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent3);
+    box-shadow: 0 0 8px var(--accent3);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* API Key inputs */
+  .provider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .provider-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .provider-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .provider-icon {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  .status-badge {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .badge-idle { background: rgba(74,96,112,0.2); color: var(--muted); border: 1px solid var(--border); }
+  .badge-active { background: rgba(57,255,20,0.1); color: var(--accent3); border: 1px solid rgba(57,255,20,0.3); }
+  .badge-error { background: rgba(255,80,80,0.1); color: #ff5050; border: 1px solid rgba(255,80,80,0.3); }
+  .badge-testing { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.3); animation: pulse 1s infinite; }
+
+  .key-input-wrap { position: relative; }
+  .key-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 40px 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .key-input::placeholder { color: var(--muted); }
+  .key-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,255,0.1); }
+  .key-input.valid { border-color: var(--accent3); }
+  .key-input.error { border-color: #ff5050; }
+  .toggle-vis {
+    position: absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px;
+  }
+  .toggle-vis:hover { color: var(--text); }
+
+  .validate-all-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,229,255,0.05));
+    border: 1px solid rgba(0,229,255,0.4);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .validate-all-btn:hover {
+    background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(0,229,255,0.1));
+    box-shadow: 0 0 20px rgba(0,229,255,0.15);
+  }
+
+  /* Active models list */
+  .model-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    margin: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+  }
+  .model-chip.active {
+    background: rgba(57,255,20,0.08);
+    border-color: rgba(57,255,20,0.3);
+    color: var(--accent3);
+  }
+  .model-chip .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .models-wrap { display: flex; flex-wrap: wrap; margin: -3px; }
+
+  /* MAIN CONTENT */
+  .main-content { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Prompt area */
+  .prompt-panel { flex-shrink: 0; }
+  .prompt-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .select-styled {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 8px 12px;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 130px;
+  }
+  .select-styled:focus { border-color: var(--accent); }
+
+  .prompt-textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text);
+    resize: vertical;
+    min-height: 130px;
+    outline: none;
+    line-height: 1.6;
+    transition: border-color 0.2s;
+  }
+  .prompt-textarea::placeholder { color: var(--muted); }
+  .prompt-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,255,0.08); }
+
+  .run-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #00e5ff, #0080ff);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .run-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .run-btn:hover::before { opacity: 1; }
+  .run-btn:hover { box-shadow: 0 0 30px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .run-btn:disabled {
+    background: var(--bg3);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .run-btn:disabled::before { display: none; }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-top: 10px;
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* Model status cards */
+  .model-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .model-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.65rem;
+    display: none;
+  }
+  .model-card.visible { display: block; }
+  .model-card-name {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .model-card-status { color: var(--muted); letter-spacing: 0.05em; }
+  .model-card.running { border-color: rgba(0,229,255,0.3); }
+  .model-card.done { border-color: rgba(57,255,20,0.3); }
+  .model-card.failed { border-color: rgba(255,80,80,0.3); }
+  .spinner {
+    width: 10px; height: 10px;
+    border: 2px solid rgba(0,229,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Output tabs */
+  .output-panel { flex: 1; }
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: -1px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    background: var(--bg2);
+    color: var(--muted);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); background: var(--bg3); }
+  .tab.active {
+    background: var(--card);
+    color: var(--accent);
+    border-color: var(--border);
+    border-bottom: 1px solid var(--card);
+  }
+  .tab.combined { color: var(--accent2); }
+  .tab.combined.active { color: var(--accent2); }
+
+  .output-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0 10px 10px 10px;
+    padding: 0;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+  .output-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .output-meta {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .output-actions { display: flex; gap: 8px; }
+  .action-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .action-btn:hover { color: var(--text); border-color: var(--accent); }
+  .action-btn.primary {
+    background: rgba(255,107,53,0.15);
+    border-color: rgba(255,107,53,0.4);
+    color: var(--accent2);
+  }
+  .action-btn.primary:hover {
+    background: rgba(255,107,53,0.25);
+    box-shadow: 0 0 12px rgba(255,107,53,0.2);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .code-block {
+    margin: 0;
+    padding: 20px;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    max-height: 600px;
+    overflow-y: auto;
+    background: transparent !important;
+  }
+  .code-block::-webkit-scrollbar { width: 6px; }
+  .code-block::-webkit-scrollbar-track { background: var(--bg2); }
+  .code-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--muted);
+    gap: 12px;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .stat-value.cyan { color: var(--accent); }
+  .stat-value.orange { color: var(--accent2); }
+  .stat-value.green { color: var(--accent3); }
+
+  /* Download modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 420px;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--accent2);
+  }
+  .modal-row { margin-bottom: 14px; }
+  .modal-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text);
+    outline: none;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .modal-btn.confirm {
+    background: linear-gradient(135deg, var(--accent2), #ff8c00);
+    border: none;
+    color: #000;
+  }
+  .modal-btn.confirm:hover { box-shadow: 0 0 20px rgba(255,107,53,0.3); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--card);
+    border: 1px solid var(--accent3);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 0.75rem;
+    color: var(--accent3);
+    z-index: 200;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* README tab */
+  .readme-content {
+    padding: 24px;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--text);
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .readme-content h2 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 20px 0 10px;
+    letter-spacing: 0.05em;
+  }
+  .readme-content h2:first-child { margin-top: 0; }
+  .readme-content p { color: var(--muted); margin-bottom: 10px; }
+  .readme-content code {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    color: var(--accent2);
+  }
+  .readme-content ul { padding-left: 20px; color: var(--muted); }
+  .readme-content li { margin-bottom: 4px; }
+
+  /* ---- TIMING DASHBOARD ---- */
+  .timing-dashboard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .timing-title {
+    font-family: var(--font-display);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .live-clock {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent3);
+    letter-spacing: 0.05em;
+  }
+  .timing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .timing-cell {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .timing-cell-label {
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .timing-cell-value {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+  .timing-cell-value.cyan { color: var(--accent); }
+  .timing-cell-value.orange { color: var(--accent2); }
+  .timing-cell-value.green { color: var(--accent3); }
+  .timing-cell-value.white { color: var(--text); }
+
+  /* Per-model timing bars */
+  .model-timing-list { display: flex; flex-direction: column; gap: 8px; }
+  .model-timing-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.68rem;
+  }
+  .model-timing-name {
+    width: 90px;
+    flex-shrink: 0;
+    color: var(--text);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .model-timing-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .model-timing-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+  .model-timing-bar.running {
+    background: linear-gradient(90deg, var(--accent), transparent);
+    animation: shimmer 1.2s linear infinite;
+    background-size: 200% 100%;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .model-timing-val {
+    width: 52px;
+    text-align: right;
+    color: var(--muted);
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+  }
+  .model-timing-val.done { color: var(--accent3); }
+  .model-timing-val.failed { color: #ff5050; }
+
+  /* Live elapsed timer */
+  .elapsed-timer {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  .elapsed-timer.running { display: flex; }
+  .elapsed-val {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent);
+    min-width: 60px;
+  }
+
+  /* Run history table */
+  .run-history {
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .run-history-title {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.63rem;
+  }
+  .history-table th {
+    text-align: left;
+    color: var(--muted);
+    padding: 4px 6px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td {
+    padding: 5px 6px;
+    color: var(--text);
+    border-bottom: 1px solid rgba(30,42,56,0.5);
+    vertical-align: middle;
+  }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-table .tag {
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--accent);
+    font-size: 0.6rem;
+  }
+  .no-history { color: var(--muted); font-size: 0.68rem; letter-spacing: 0.05em; padding: 6px 0; }
+
+  /* Responsive */
+  @media(max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .sidebar { order: 2; }
+    .main-content { order: 1; }
+  }
+  @media(max-width: 500px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="app-wrapper">
+  <header>
+    <div>
+      <div class="logo">NY <span>AIMIXER</span></div>
+      <div class="logo-sub">Unified Multi-Model Engine</div>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span id="activeCount">0 models active</span>
+      <span>|</span>
+      <span id="sessionTokens">0 tokens used</span>
+    </div>
+  </header>
+
+  <!-- Stats row -->
+  <div class="stats-row" style="grid-template-columns:repeat(6,1fr)">
+    <div class="stat-card">
+      <div class="stat-label">Active Models</div>
+      <div class="stat-value cyan" id="statModels">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Runs Total</div>
+      <div class="stat-value" id="statRuns">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lines Generated</div>
+      <div class="stat-value green" id="statLines">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Speed</div>
+      <div class="stat-value orange" id="statSpeed">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Time</div>
+      <div class="stat-value cyan" id="statBest">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Est. Tokens</div>
+      <div class="stat-value green" id="statTokens">0</div>
+    </div>
+  </div>
+
+  <!-- TIMING DASHBOARD -->
+  <div class="timing-dashboard">
+    <div class="timing-title">
+      ⏱ Real-Time Performance Monitor
+      <span class="live-clock" id="liveClock">--:--:--</span>
+    </div>
+    <div class="timing-grid">
+      <div class="timing-cell">
+        <div class="timing-cell-label">Last Run Total</div>
+        <div class="timing-cell-value cyan" id="timLastTotal">—</div>
+      </div>
+      <div class="timing-cell">
+        <div class="timing-cell-label">Fastest Model</div>
+        <div class="timing-cell-value green" id="timFastest">—</div>
+      </div>
+      <div class="timing-cell">
+        <div class="timing-cell-label">Slowest Model</div>
+        <div class="timing-cell-value orange" id="timSlowest">—</div>
+      </div>
+      <div class="timing-cell">
+        <div class="timing-cell-label">Avg Per Model</div>
+        <div class="timing-cell-value white" id="timAvg">—</div>
+      </div>
+      <div class="timing-cell">
+        <div class="timing-cell-label">Tokens/Second</div>
+        <div class="timing-cell-value cyan" id="timTokSec">—</div>
+      </div>
+      <div class="timing-cell">
+        <div class="timing-cell-label">Models Succeeded</div>
+        <div class="timing-cell-value green" id="timSucceeded">—</div>
+      </div>
+    </div>
+
+    <!-- Live elapsed timer shown while running -->
+    <div class="elapsed-timer" id="elapsedTimer">
+      <span>⏳ Running...</span>
+      <span class="elapsed-val" id="elapsedVal">0.0s</span>
+      <span style="color:var(--muted);font-size:0.65rem" id="elapsedModels">waiting for models</span>
+    </div>
+
+    <!-- Per-model timing bars -->
+    <div class="model-timing-list" id="modelTimingList">
+      <div class="no-history">Run a prompt to see per-model timing</div>
+    </div>
+
+    <!-- Run history -->
+    <div class="run-history">
+      <div class="run-history-title">Run History</div>
+      <div id="runHistoryWrap">
+        <div class="no-history">No runs yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- API Keys Panel - Single Smart Input -->
+      <div class="panel">
+        <div class="panel-title">API Keys</div>
+
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px;letter-spacing:0.03em;line-height:1.6;">
+          Paste one or more API keys below — one per line. Provider is auto-detected instantly.
+        </div>
+
+        <!-- Single textarea for all keys -->
+        <div style="position:relative;">
+          <textarea
+            id="smartKeyInput"
+            class="prompt-textarea"
+            style="min-height:110px;font-size:0.72rem;letter-spacing:0.03em;resize:vertical;"
+            placeholder="Paste your API keys here, one per line:
+
+sk-...           (OpenAI)
+sk-ant-...       (Anthropic)
+AIza...          (Gemini)
+gsk_...          (Groq)
+(any)            (Mistral)"
+            spellcheck="false"
+            autocomplete="off"
+          ></textarea>
+          <button class="toggle-vis" style="top:10px;right:10px;position:absolute;" onclick="toggleSmartVis()">👁</button>
+        </div>
+
+        <!-- Detected providers live preview -->
+        <div id="detectedProviders" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;min-height:26px;">
+          <span style="font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;">No keys detected yet</span>
+        </div>
+
+        <button class="validate-all-btn" style="margin-top:10px;" onclick="validateAllKeys()">⚡ Auto-Detect &amp; Validate All</button>
+      </div>
+
+      <!-- Active Models Panel -->
+      <div class="panel">
+        <div class="panel-title">Active Models</div>
+        <div class="models-wrap" id="modelsWrap">
+          <div style="color:var(--muted);font-size:0.7rem;letter-spacing:0.05em">No active models yet</div>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div class="panel">
+        <div class="panel-title">Generation Settings</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div class="modal-label">Max Tokens per Model</div>
+            <select class="select-styled" id="maxTokens" style="width:100%">
+              <option value="4096">4,096 (Fast)</option>
+              <option value="8192" selected>8,192 (Balanced)</option>
+              <option value="16384">16,384 (High)</option>
+              <option value="32768">32,768 (Maximum)</option>
+            </select>
+          </div>
+          <div>
+            <div class="modal-label">Combiner Strategy</div>
+            <select class="select-styled" id="combineStrategy" style="width:100%">
+              <option value="longest">Longest Response</option>
+              <option value="best" selected>Best Quality (Smart)</option>
+              <option value="merge">Deep Merge All</option>
+              <option value="vote">Majority Vote</option>
+            </select>
+          </div>
+          <div>
+            <div class="modal-label">Temperature</div>
+            <select class="select-styled" id="temperature" style="width:100%">
+              <option value="0">0.0 — Precise</option>
+              <option value="0.3" selected>0.3 — Balanced</option>
+              <option value="0.7">0.7 — Creative</option>
+              <option value="1.0">1.0 — Wild</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- Prompt Panel -->
+      <div class="panel prompt-panel">
+        <div class="panel-title">Code Prompt</div>
+        <div class="prompt-controls">
+          <select class="select-styled" id="langSelect">
+            <option value="auto">🤖 Auto-detect Language</option>
+            <option value="python">🐍 Python</option>
+            <option value="javascript">⚡ JavaScript</option>
+            <option value="typescript">🔷 TypeScript</option>
+            <option value="react">⚛️ React / JSX</option>
+            <option value="html">🌐 HTML + CSS</option>
+            <option value="rust">🦀 Rust</option>
+            <option value="go">🐹 Go</option>
+            <option value="java">☕ Java</option>
+            <option value="cpp">⚙️ C++</option>
+            <option value="bash">🖥️ Bash / Shell</option>
+            <option value="sql">🗄️ SQL</option>
+          </select>
+          <select class="select-styled" id="taskType">
+            <option value="general">General Code</option>
+            <option value="fullapp">Full App / System</option>
+            <option value="api">API / Backend</option>
+            <option value="ui">UI Component</option>
+            <option value="algorithm">Algorithm / Logic</option>
+            <option value="debug">Debug / Fix Code</option>
+            <option value="optimize">Optimize Code</option>
+          </select>
+        </div>
+        <textarea class="prompt-textarea" id="promptInput" placeholder="Describe what you want to build... e.g. Build a full REST API for a todo app with authentication, database models, and all CRUD endpoints. Make it production-ready with error handling."></textarea>
+
+        <button class="run-btn" id="runBtn" onclick="runAllModels()" disabled>
+          ⚡ Mix All Active Models
+        </button>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label">
+            <span id="progressText">Initializing...</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <div class="model-status-grid" id="modelStatusGrid"></div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="panel output-panel">
+        <div class="panel-title">Output</div>
+        <div class="tab-bar" id="tabBar">
+          <div class="tab active" onclick="switchTab('empty')" id="tab-empty">Waiting...</div>
+        </div>
+        <div class="output-box">
+          <div class="output-toolbar">
+            <span class="output-meta" id="outputMeta">No output yet</span>
+            <div class="output-actions">
+              <button class="action-btn" onclick="copyOutput()">📋 Copy</button>
+              <button class="action-btn primary" onclick="openDownloadModal()">⬇ Download File</button>
+            </div>
+          </div>
+          <div id="tabContents">
+            <div class="tab-content active" id="content-empty">
+              <div class="empty-state">
+                <div class="empty-icon">⚡</div>
+                <span>Add API keys and enter a prompt to begin</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Download Modal -->
+<div class="modal-overlay" id="downloadModal">
+  <div class="modal">
+    <div class="modal-title">⬇ Download Code File</div>
+    <div class="modal-row">
+      <div class="modal-label">File Name</div>
+      <input type="text" class="modal-input" id="downloadName" value="generated_code"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">File Extension</div>
+      <select class="modal-input" id="downloadExt">
+        <option value=".py">Python (.py)</option>
+        <option value=".js">JavaScript (.js)</option>
+        <option value=".ts">TypeScript (.ts)</option>
+        <option value=".jsx">React JSX (.jsx)</option>
+        <option value=".tsx">React TSX (.tsx)</option>
+        <option value=".html">HTML (.html)</option>
+        <option value=".css">CSS (.css)</option>
+        <option value=".rs">Rust (.rs)</option>
+        <option value=".go">Go (.go)</option>
+        <option value=".java">Java (.java)</option>
+        <option value=".cpp">C++ (.cpp)</option>
+        <option value=".sh">Shell (.sh)</option>
+        <option value=".sql">SQL (.sql)</option>
+        <option value=".txt">Text (.txt)</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Source</div>
+      <select class="modal-input" id="downloadSource">
+        <option value="combined">⭐ Combined Output</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeDownloadModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="doDownload()">Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  activeKeys: {},
+  responses: {},
+  combinedOutput: '',
+  totalRuns: 0,
+  totalLines: 0,
+  totalTokens: 0,
+  speeds: [],
+  currentTab: 'empty'
+};
+
+const PROVIDERS = {
+  openai: {
+    name: 'GPT-4o',
+    models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    color: '#10a37f',
+    call: callOpenAI
+  },
+  anthropic: {
+    name: 'Claude 3.5',
+    models: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+    color: '#d4a574',
+    call: callAnthropic
+  },
+  gemini: {
+    name: 'Gemini 1.5',
+    models: ['gemini-1.5-pro', 'gemini-1.5-flash'],
+    color: '#4285f4',
+    call: callGemini
+  },
+  mistral: {
+    name: 'Mistral Large',
+    models: ['mistral-large-latest', 'mistral-medium-latest'],
+    color: '#ff7200',
+    call: callMistral
+  },
+  groq: {
+    name: 'Llama 3.1',
+    models: ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    color: '#f55ff5',
+    call: callGroq
+  }
+};
+
+// ============================================================
+// SMART SINGLE-INPUT KEY DETECTION
+// ============================================================
+const KEY_PATTERNS = [
+  { provider: 'openai',    test: k => k.startsWith('sk-') && !k.startsWith('sk-ant-'), label: 'GPT-4o',        color: '#10a37f', icon: 'G' },
+  { provider: 'anthropic', test: k => k.startsWith('sk-ant-'),                          label: 'Claude 3.5',    color: '#d4a574', icon: 'A' },
+  { provider: 'gemini',    test: k => k.startsWith('AIza'),                             label: 'Gemini',        color: '#4285f4', icon: 'Gm' },
+  { provider: 'groq',      test: k => k.startsWith('gsk_'),                             label: 'Groq/Llama',    color: '#f55ff5', icon: 'Gq' },
+  { provider: 'mistral',   test: k => k.length > 20 && !k.startsWith('sk-') && !k.startsWith('AIza') && !k.startsWith('gsk_'), label: 'Mistral', color: '#ff7200', icon: 'M' },
+];
+
+let smartVisible = false;
+function toggleSmartVis() {
+  smartVisible = !smartVisible;
+  const ta = document.getElementById('smartKeyInput');
+  // Use blur trick: show/hide characters via font trick since textarea has no type attr
+  ta.style.webkitTextSecurity = smartVisible ? 'none' : 'disc';
+  ta.style.textSecurity = smartVisible ? 'none' : 'disc';
+}
+
+function detectKeysFromInput() {
+  const raw = document.getElementById('smartKeyInput').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+  const detected = {};
+  lines.forEach(key => {
+    for (const p of KEY_PATTERNS) {
+      if (p.test(key) && !detected[p.provider]) {
+        detected[p.provider] = key;
+        break;
+      }
+    }
+  });
+  return detected;
+}
+
+function updateDetectedBadges(detected) {
+  const wrap = document.getElementById('detectedProviders');
+  if (Object.keys(detected).length === 0) {
+    wrap.innerHTML = '<span style="font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;">No keys detected yet</span>';
+    return;
+  }
+  wrap.innerHTML = KEY_PATTERNS
+    .filter(p => detected[p.provider])
+    .map(p => `
+      <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;
+        background:${p.color}15;border:1px solid ${p.color}40;font-size:0.62rem;color:${p.color};letter-spacing:0.06em;">
+        <span style="width:6px;height:6px;border-radius:50%;background:${p.color};display:inline-block;"></span>
+        ${p.label}
+      </div>
+    `).join('');
+}
+
+// Live detection as user types
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('smartKeyInput');
+  // Default hide characters
+  ta.style.webkitTextSecurity = 'disc';
+  ta.style.textSecurity = 'disc';
+
+  ta.addEventListener('input', () => {
+    const detected = detectKeysFromInput();
+    updateDetectedBadges(detected);
+    // Auto-trigger validation after short pause
+    clearTimeout(ta._debounce);
+    ta._debounce = setTimeout(() => {
+      if (Object.keys(detected).length > 0) validateAllKeys();
+    }, 800);
+  });
+  ta.addEventListener('paste', () => {
+    setTimeout(() => {
+      const detected = detectKeysFromInput();
+      updateDetectedBadges(detected);
+      if (Object.keys(detected).length > 0) validateAllKeys();
+    }, 100);
+  });
+});
+
+async function validateAllKeys() {
+  const detected = detectKeysFromInput();
+  state.activeKeys = {};
+
+  // Reset all badges to idle first
+  ['openai','anthropic','gemini','mistral','groq'].forEach(p => {
+    const el = document.getElementById(`badge-${p}`);
+    if (el) { el.className = 'status-badge badge-idle'; el.textContent = 'IDLE'; }
+  });
+
+  if (Object.keys(detected).length === 0) {
+    updateModelsPanel();
+    updateStats();
+    updateRunBtn();
+    showToast('⚠ No API keys detected');
+    return;
+  }
+
+  for (const [provider, key] of Object.entries(detected)) {
+    setBadge(provider, 'testing');
+    const valid = await testKey(provider, key);
+    if (valid) {
+      state.activeKeys[provider] = key;
+      setBadge(provider, 'active');
+    } else {
+      setBadge(provider, 'error');
+    }
+  }
+
+  updateDetectedBadges(detectKeysFromInput());
+  updateModelsPanel();
+  updateStats();
+  updateRunBtn();
+  showToast(`✓ ${Object.keys(state.activeKeys).length} model(s) active & ready`);
+}
+
+async function testKey(provider, key) {
+  try {
+    const prompt = 'Reply with just: OK';
+    const maxTok = 10;
+    if (provider === 'openai') {
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'user', content: prompt }], max_tokens: maxTok })
+      });
+      return r.ok;
+    } else if (provider === 'anthropic') {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: maxTok, messages: [{ role: 'user', content: prompt }] })
+      });
+      return r.ok;
+    } else if (provider === 'gemini') {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTok } })
+      });
+      return r.ok;
+    } else if (provider === 'mistral') {
+      const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({ model: 'mistral-tiny', messages: [{ role: 'user', content: prompt }], max_tokens: maxTok })
+      });
+      return r.ok;
+    } else if (provider === 'groq') {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({ model: 'llama3-8b-8192', messages: [{ role: 'user', content: prompt }], max_tokens: maxTok })
+      });
+      return r.ok;
+    }
+  } catch { return false; }
+  return false;
+}
+
+function setBadge(provider, status) {
+  const el = document.getElementById(`badge-${provider}`);
+  const map = {
+    idle: ['badge-idle', 'IDLE'],
+    active: ['badge-active', 'ACTIVE'],
+    error: ['badge-error', 'ERROR'],
+    testing: ['badge-testing', 'TESTING...']
+  };
+  el.className = `status-badge ${map[status][0]}`;
+  el.textContent = map[status][1];
+}
+
+function updateModelsPanel() {
+  const wrap = document.getElementById('modelsWrap');
+  const all = ['openai', 'anthropic', 'gemini', 'mistral', 'groq'];
+  if (Object.keys(state.activeKeys).length === 0) {
+    wrap.innerHTML = '<div style="color:var(--muted);font-size:0.7rem;letter-spacing:0.05em">No active models yet</div>';
+    return;
+  }
+  wrap.innerHTML = all.map(p => {
+    const active = !!state.activeKeys[p];
+    const info = PROVIDERS[p];
+    return `<div class="model-chip ${active ? 'active' : ''}">
+      <div class="dot"></div>${info.models[0]}
+    </div>`;
+  }).join('');
+}
+
+function updateRunBtn() {
+  const btn = document.getElementById('runBtn');
+  const hasKeys = Object.keys(state.activeKeys).length > 0;
+  const hasPrompt = document.getElementById('promptInput').value.trim().length > 0;
+  btn.disabled = !(hasKeys && hasPrompt);
+}
+
+
+// ============================================================
+// AI CALLS
+// ============================================================
+function buildSystemPrompt() {
+  const task = document.getElementById('taskType').value;
+  const lang = document.getElementById('langSelect').value;
+  const maxTok = document.getElementById('maxTokens').value;
+  const langStr = lang === 'auto' ? 'the most appropriate language' : lang;
+
+  return `You are an elite software engineer. Generate complete, production-ready code.
+RULES:
+- Write ONLY code. No explanations before or after — just the code block.
+- Use ${langStr} unless instructed otherwise.
+- This is a "${task}" task — optimize accordingly.
+- Write maximum lines, maximum completeness. No placeholders. No TODO comments.
+- Include error handling, edge cases, and best practices.
+- Max tokens available: ${maxTok}. Use them all if needed.
+- Every function must be fully implemented.`;
+}
+
+async function callOpenAI(key, prompt) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: parseInt(document.getElementById('maxTokens').value),
+      temperature: parseFloat(document.getElementById('temperature').value)
+    })
+  });
+  if (!r.ok) throw new Error(`OpenAI ${r.status}`);
+  const d = await r.json();
+  return d.choices[0].message.content;
+}
+
+async function callAnthropic(key, prompt) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: parseInt(document.getElementById('maxTokens').value),
+      system: buildSystemPrompt(),
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!r.ok) throw new Error(`Anthropic ${r.status}`);
+  const d = await r.json();
+  return d.content[0].text;
+}
+
+async function callGemini(key, prompt) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: buildSystemPrompt() + '\n\n' + prompt }] }],
+      generationConfig: {
+        maxOutputTokens: parseInt(document.getElementById('maxTokens').value),
+        temperature: parseFloat(document.getElementById('temperature').value)
+      }
+    })
+  });
+  if (!r.ok) throw new Error(`Gemini ${r.status}`);
+  const d = await r.json();
+  return d.candidates[0].content.parts[0].text;
+}
+
+async function callMistral(key, prompt) {
+  const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'mistral-large-latest',
+      messages: [
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: parseInt(document.getElementById('maxTokens').value),
+      temperature: parseFloat(document.getElementById('temperature').value)
+    })
+  });
+  if (!r.ok) throw new Error(`Mistral ${r.status}`);
+  const d = await r.json();
+  return d.choices[0].message.content;
+}
+
+async function callGroq(key, prompt) {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'llama-3.1-70b-versatile',
+      messages: [
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: Math.min(parseInt(document.getElementById('maxTokens').value), 8000),
+      temperature: parseFloat(document.getElementById('temperature').value)
+    })
+  });
+  if (!r.ok) throw new Error(`Groq ${r.status}`);
+  const d = await r.json();
+  return d.choices[0].message.content;
+}
+
+// ============================================================
+// LIVE CLOCK
+// ============================================================
+function startLiveClock() {
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById('liveClock').textContent =
+      now.toLocaleTimeString('en-US', { hour12: false });
+  }, 1000);
+}
+startLiveClock();
+
+// ============================================================
+// RUN ALL MODELS
+// ============================================================
+let elapsedInterval = null;
+
+async function runAllModels() {
+  const prompt = document.getElementById('promptInput').value.trim();
+  if (!prompt) return;
+  const providers = Object.keys(state.activeKeys);
+  if (providers.length === 0) return;
+
+  state.responses = {};
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('runBtn').textContent = '⏳ Running All Models...';
+
+  // Build status cards
+  const grid = document.getElementById('modelStatusGrid');
+  grid.innerHTML = '';
+  providers.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'model-card visible running';
+    card.id = `mcard-${p}`;
+    card.innerHTML = `<div class="model-card-name"><span class="spinner"></span> ${PROVIDERS[p].name}</div>
+    <div class="model-card-status" id="mstatus-${p}">Running...</div>`;
+    grid.appendChild(card);
+  });
+
+  // Show progress
+  const pw = document.getElementById('progressWrap');
+  pw.classList.add('visible');
+  setProgress(0, 'Running models in parallel...');
+
+  // Start elapsed timer UI
+  const startAll = Date.now();
+  const elapsedEl = document.getElementById('elapsedTimer');
+  const elapsedVal = document.getElementById('elapsedVal');
+  const elapsedModels = document.getElementById('elapsedModels');
+  elapsedEl.classList.add('running');
+  elapsedInterval = setInterval(() => {
+    const sec = ((Date.now() - startAll) / 1000).toFixed(1);
+    elapsedVal.textContent = sec + 's';
+    const done = Object.keys(state.responses).length;
+    elapsedModels.textContent = `${done}/${providers.length} models responded`;
+  }, 100);
+
+  // Init per-model timing bars
+  initModelTimingBars(providers);
+
+  // Clear old tabs
+  rebuildTabs([]);
+
+  // Track per-model start times
+  const modelStartTimes = {};
+
+  // Run all in parallel
+  const promises = providers.map(async p => {
+    modelStartTimes[p] = Date.now();
+    updateModelBar(p, 'running', 0, null);
+    const t0 = Date.now();
+    try {
+      const result = await PROVIDERS[p].call(state.activeKeys[p], prompt);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(2);
+      state.responses[p] = { text: result, time: parseFloat(elapsed), status: 'done', startedAt: t0 };
+      setCardDone(p, elapsed);
+      updateModelBar(p, 'done', elapsed, null);
+    } catch (e) {
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(2);
+      state.responses[p] = { text: null, time: parseFloat(elapsed), status: 'failed', error: e.message };
+      setCardFailed(p, e.message);
+      updateModelBar(p, 'failed', elapsed, e.message);
+    }
+    const done = Object.keys(state.responses).length;
+    setProgress((done / providers.length) * 80, `${done}/${providers.length} models complete`);
+  });
+
+  await Promise.all(promises);
+
+  // Stop elapsed timer
+  clearInterval(elapsedInterval);
+  elapsedEl.classList.remove('running');
+
+  setProgress(90, 'Combining outputs...');
+  await new Promise(r => setTimeout(r, 300));
+
+  // Combine
+  const combined = combineOutputs();
+  state.combinedOutput = combined;
+  const totalTime = ((Date.now() - startAll) / 1000).toFixed(2);
+
+  setProgress(100, 'Done!');
+
+  // Build tabs
+  const successProviders = providers.filter(p => state.responses[p].status === 'done');
+  rebuildTabs(successProviders);
+
+  // Update timing dashboard
+  updateTimingDashboard(providers, totalTime, combined);
+
+  // Update stats
+  state.totalRuns++;
+  const lines = combined.split('\n').length;
+  state.totalLines += lines;
+  state.speeds.push(parseFloat(totalTime));
+  updateStats();
+
+  // Add to run history
+  addRunHistory(prompt, providers, totalTime, successProviders.length, lines);
+
+  // Finalize per-model bars with relative widths
+  finalizeModelBars(providers);
+
+  // Set download options
+  const dlSrc = document.getElementById('downloadSource');
+  dlSrc.innerHTML = `<option value="combined">⭐ Combined Output</option>`;
+  successProviders.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = PROVIDERS[p].name;
+    dlSrc.appendChild(opt);
+  });
+
+  autoDetectExt(combined);
+
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('runBtn').textContent = '⚡ Run All Active Models';
+  showToast(`✓ Done in ${totalTime}s — ${lines} lines — ${successProviders.length}/${providers.length} models`);
+
+  setTimeout(() => {
+    pw.classList.remove('visible');
+    grid.innerHTML = '';
+  }, 3000);
+}
+
+// ============================================================
+// TIMING DASHBOARD
+// ============================================================
+function initModelTimingBars(providers) {
+  const list = document.getElementById('modelTimingList');
+  list.innerHTML = providers.map(p => `
+    <div class="model-timing-row" id="timrow-${p}">
+      <div class="model-timing-name">${PROVIDERS[p].name}</div>
+      <div class="model-timing-bar-wrap">
+        <div class="model-timing-bar running" id="timbar-${p}" style="width:100%"></div>
+      </div>
+      <div class="model-timing-val" id="timval-${p}">⏳</div>
+    </div>
+  `).join('');
+}
+
+function updateModelBar(p, status, elapsed, error) {
+  const bar = document.getElementById(`timbar-${p}`);
+  const val = document.getElementById(`timval-${p}`);
+  if (!bar || !val) return;
+  if (status === 'done') {
+    bar.className = 'model-timing-bar';
+    bar.style.background = 'var(--accent3)';
+    val.className = 'model-timing-val done';
+    val.textContent = elapsed + 's';
+  } else if (status === 'failed') {
+    bar.className = 'model-timing-bar';
+    bar.style.background = '#ff5050';
+    val.className = 'model-timing-val failed';
+    val.textContent = 'ERROR';
+  }
+}
+
+function finalizeModelBars(providers) {
+  const times = providers
+    .filter(p => state.responses[p] && state.responses[p].status === 'done')
+    .map(p => state.responses[p].time);
+  if (times.length === 0) return;
+  const maxTime = Math.max(...times);
+  providers.forEach(p => {
+    const bar = document.getElementById(`timbar-${p}`);
+    if (!bar || !state.responses[p]) return;
+    if (state.responses[p].status === 'done') {
+      const pct = (state.responses[p].time / maxTime) * 100;
+      bar.style.width = pct + '%';
+    } else {
+      bar.style.width = '100%';
+    }
+  });
+}
+
+function updateTimingDashboard(providers, totalTime, combined) {
+  const done = providers.filter(p => state.responses[p] && state.responses[p].status === 'done');
+  const failed = providers.filter(p => state.responses[p] && state.responses[p].status === 'failed');
+  const times = done.map(p => state.responses[p].time);
+
+  document.getElementById('timLastTotal').textContent = totalTime + 's';
+
+  if (times.length > 0) {
+    const fastest = done.reduce((a, b) => state.responses[a].time < state.responses[b].time ? a : b);
+    const slowest = done.reduce((a, b) => state.responses[a].time > state.responses[b].time ? a : b);
+    const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(2);
+    const lines = combined.split('\n').length;
+    const tokEst = lines * 4;
+    const tokSec = (tokEst / parseFloat(totalTime)).toFixed(0);
+
+    document.getElementById('timFastest').textContent = `${PROVIDERS[fastest].name} ${state.responses[fastest].time}s`;
+    document.getElementById('timSlowest').textContent = `${PROVIDERS[slowest].name} ${state.responses[slowest].time}s`;
+    document.getElementById('timAvg').textContent = avg + 's';
+    document.getElementById('timTokSec').textContent = tokSec + ' t/s';
+    document.getElementById('timSucceeded').textContent = `${done.length}/${providers.length}`;
+  }
+}
+
+// Run history
+const runHistory = [];
+function addRunHistory(prompt, providers, totalTime, succeeded, lines) {
+  const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+  runHistory.unshift({ prompt: prompt.substring(0, 40) + (prompt.length > 40 ? '…' : ''), providers: providers.length, totalTime, succeeded, lines, time: now });
+  if (runHistory.length > 8) runHistory.pop();
+
+  const wrap = document.getElementById('runHistoryWrap');
+  wrap.innerHTML = `<table class="history-table">
+    <thead><tr>
+      <th>Time</th><th>Prompt</th><th>Models</th><th>Duration</th><th>Lines</th>
+    </tr></thead>
+    <tbody>
+      ${runHistory.map(r => `<tr>
+        <td style="color:var(--muted)">${r.time}</td>
+        <td>${r.prompt}</td>
+        <td><span class="tag">${r.succeeded}/${r.providers}</span></td>
+        <td style="color:var(--accent)">${r.totalTime}s</td>
+        <td style="color:var(--accent3)">${r.lines}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function setCardDone(p, elapsed) {
+  const card = document.getElementById(`mcard-${p}`);
+  if (!card) return;
+  card.className = 'model-card visible done';
+  card.querySelector('.model-card-name').innerHTML = `✅ ${PROVIDERS[p].name}`;
+  document.getElementById(`mstatus-${p}`).textContent = `${elapsed}s`;
+}
+
+function setCardFailed(p, msg) {
+  const card = document.getElementById(`mcard-${p}`);
+  if (!card) return;
+  card.className = 'model-card visible failed';
+  card.querySelector('.model-card-name').innerHTML = `❌ ${PROVIDERS[p].name}`;
+  document.getElementById(`mstatus-${p}`).textContent = msg.substring(0, 30);
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressPct').textContent = Math.round(pct) + '%';
+}
+
+// ============================================================
+// COMBINE OUTPUTS
+// ============================================================
+function combineOutputs() {
+  const strategy = document.getElementById('combineStrategy').value;
+  const outputs = Object.entries(state.responses)
+    .filter(([, v]) => v.status === 'done')
+    .map(([, v]) => v.text);
+
+  if (outputs.length === 0) return '// No successful outputs';
+  if (outputs.length === 1) return outputs[0];
+
+  if (strategy === 'longest') {
+    return outputs.sort((a, b) => b.length - a.length)[0];
+  }
+
+  if (strategy === 'best') {
+    // Score by: length, function count, code density
+    const scored = outputs.map(o => ({
+      text: o,
+      score: o.length * 0.4 +
+             (o.match(/function|def |class |async |const |let |var /g) || []).length * 50 +
+             (o.match(/\n/g) || []).length * 2
+    }));
+    return scored.sort((a, b) => b.score - a.score)[0].text;
+  }
+
+  if (strategy === 'merge') {
+    // Deep merge: take longest as base, append unique blocks from others
+    const sorted = outputs.sort((a, b) => b.length - a.length);
+    let base = sorted[0];
+    const baseLines = new Set(base.split('\n').map(l => l.trim()).filter(l => l.length > 5));
+    for (let i = 1; i < sorted.length; i++) {
+      const extra = sorted[i].split('\n').filter(l => {
+        const t = l.trim();
+        return t.length > 5 && !baseLines.has(t);
+      });
+      if (extra.length > 0) {
+        base += '\n\n// --- Additional from model ' + (i + 1) + ' ---\n' + extra.join('\n');
+      }
+    }
+    return base;
+  }
+
+  if (strategy === 'vote') {
+    // Find most common lines
+    const allLines = outputs.flatMap(o => o.split('\n').map(l => l.trim()));
+    const freq = {};
+    allLines.forEach(l => { if (l) freq[l] = (freq[l] || 0) + 1; });
+    const threshold = Math.max(1, Math.floor(outputs.length / 2));
+    const voted = allLines.filter(l => freq[l] >= threshold);
+    return [...new Set(voted)].join('\n');
+  }
+
+  return outputs[0];
+}
+
+// ============================================================
+// TABS & OUTPUT
+// ============================================================
+function rebuildTabs(providers) {
+  const tabBar = document.getElementById('tabBar');
+  const tabContents = document.getElementById('tabContents');
+  tabBar.innerHTML = '';
+  tabContents.innerHTML = '';
+
+  if (providers.length === 0) {
+    tabBar.innerHTML = '<div class="tab active">Waiting...</div>';
+    tabContents.innerHTML = '<div class="tab-content active"><div class="empty-state"><div class="empty-icon">⚡</div><span>Add API keys and enter a prompt to begin</span></div></div>';
+    return;
+  }
+
+  // Combined tab (first)
+  addTab('combined', '⭐ Combined', state.combinedOutput, true);
+
+  // Individual tabs
+  providers.forEach(p => {
+    const resp = state.responses[p];
+    if (resp && resp.status === 'done') {
+      addTab(p, `${PROVIDERS[p].name} (${resp.time}s)`, resp.text, false);
+    }
+  });
+
+  updateOutputMeta();
+}
+
+function addTab(id, label, code, active) {
+  const tabBar = document.getElementById('tabBar');
+  const tabContents = document.getElementById('tabContents');
+
+  const tab = document.createElement('div');
+  tab.className = `tab ${id === 'combined' ? 'combined' : ''} ${active ? 'active' : ''}`;
+  tab.id = `tab-${id}`;
+  tab.textContent = label;
+  tab.onclick = () => switchTab(id);
+  tabBar.appendChild(tab);
+
+  const content = document.createElement('div');
+  content.className = `tab-content ${active ? 'active' : ''}`;
+  content.id = `content-${id}`;
+
+  const cleaned = extractCode(code || '');
+  const pre = document.createElement('pre');
+  const codeEl = document.createElement('code');
+  codeEl.className = detectLang(cleaned);
+  codeEl.textContent = cleaned;
+  pre.className = 'code-block';
+  pre.appendChild(codeEl);
+  content.appendChild(pre);
+  tabContents.appendChild(content);
+
+  hljs.highlightElement(codeEl);
+  state.currentTab = active ? id : state.currentTab;
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const tab = document.getElementById(`tab-${id}`);
+  const content = document.getElementById(`content-${id}`);
+  if (tab) tab.classList.add('active');
+  if (content) content.classList.add('active');
+  state.currentTab = id;
+  updateOutputMeta();
+}
+
+function extractCode(text) {
+  // Remove markdown code fences
+  const match = text.match(/```[\w]*\n?([\s\S]*?)```/);
+  return match ? match[1].trim() : text.trim();
+}
+
+function detectLang(code) {
+  const lang = document.getElementById('langSelect').value;
+  if (lang !== 'auto') return lang;
+  if (code.includes('import React') || code.includes('jsx')) return 'jsx';
+  if (code.includes('def ') && code.includes('print(')) return 'python';
+  if (code.includes('function') || code.includes('const ') || code.includes('=>')) return 'javascript';
+  if (code.includes('<html') || code.includes('<!DOCTYPE')) return 'html';
+  if (code.includes('SELECT') || code.includes('CREATE TABLE')) return 'sql';
+  if (code.includes('fn ') && code.includes('let mut')) return 'rust';
+  if (code.includes('package main') || code.includes('func ')) return 'go';
+  return 'plaintext';
+}
+
+function updateOutputMeta() {
+  const id = state.currentTab;
+  let text = '';
+  if (id === 'combined') {
+    const lines = (state.combinedOutput || '').split('\n').length;
+    text = `Combined output • ${lines} lines • ${Object.keys(state.responses).filter(p => state.responses[p].status === 'done').length} models merged`;
+  } else if (state.responses[id]) {
+    const r = state.responses[id];
+    const lines = (r.text || '').split('\n').length;
+    text = `${PROVIDERS[id].name} • ${lines} lines • ${r.time}s`;
+  } else {
+    text = 'No output yet';
+  }
+  document.getElementById('outputMeta').textContent = text;
+}
+
+// ============================================================
+// DOWNLOAD
+// ============================================================
+function autoDetectExt(code) {
+  const lang = document.getElementById('langSelect').value;
+  const extMap = {
+    python: '.py', javascript: '.js', typescript: '.ts',
+    react: '.jsx', html: '.html', rust: '.rs',
+    go: '.go', java: '.java', cpp: '.cpp', bash: '.sh', sql: '.sql'
+  };
+  const extEl = document.getElementById('downloadExt');
+  if (lang !== 'auto' && extMap[lang]) {
+    extEl.value = extMap[lang];
+  } else {
+    const detected = detectLang(code);
+    extEl.value = extMap[detected] || '.txt';
+  }
+}
+
+function openDownloadModal() {
+  if (!state.combinedOutput) { showToast('No output to download yet'); return; }
+  document.getElementById('downloadModal').classList.add('visible');
+}
+function closeDownloadModal() {
+  document.getElementById('downloadModal').classList.remove('visible');
+}
+
+function doDownload() {
+  const name = document.getElementById('downloadName').value || 'generated_code';
+  const ext = document.getElementById('downloadExt').value;
+  const src = document.getElementById('downloadSource').value;
+
+  let code = '';
+  if (src === 'combined') {
+    code = extractCode(state.combinedOutput);
+  } else if (state.responses[src]) {
+    code = extractCode(state.responses[src].text);
+  }
+
+  const blob = new Blob([code], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name + ext;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeDownloadModal();
+  showToast(`✓ Downloaded ${name}${ext}`);
+}
+
+// ============================================================
+// COPY
+// ============================================================
+function copyOutput() {
+  let code = '';
+  if (state.currentTab === 'combined') {
+    code = extractCode(state.combinedOutput || '');
+  } else if (state.responses[state.currentTab]) {
+    code = extractCode(state.responses[state.currentTab].text || '');
+  }
+  if (!code) { showToast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(code).then(() => showToast('✓ Copied to clipboard'));
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  document.getElementById('statModels').textContent = Object.keys(state.activeKeys).length;
+  document.getElementById('statRuns').textContent = state.totalRuns;
+  document.getElementById('statLines').textContent = state.totalLines.toLocaleString();
+  const avg = state.speeds.length
+    ? (state.speeds.reduce((a, b) => a + b, 0) / state.speeds.length).toFixed(2) + 's'
+    : '—';
+  document.getElementById('statSpeed').textContent = avg;
+  const best = state.speeds.length
+    ? Math.min(...state.speeds).toFixed(2) + 's'
+    : '—';
+  document.getElementById('statBest').textContent = best;
+  const estTokens = state.totalLines * 4;
+  document.getElementById('statTokens').textContent = estTokens > 1000
+    ? (estTokens / 1000).toFixed(1) + 'k'
+    : estTokens;
+  document.getElementById('activeCount').textContent = `${Object.keys(state.activeKeys).length} models active`;
+  document.getElementById('sessionTokens').textContent = `~${estTokens.toLocaleString()} tokens used`;
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Prompt input listener
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('promptInput').addEventListener('input', updateRunBtn);
+});
+</script>
+</body>
+</html>
